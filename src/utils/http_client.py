@@ -13,12 +13,13 @@ log = logging.getLogger(__name__)
 
 def get_with_backoff(url: str, params: dict | None = None,
                        headers: dict | None = None,
-                       max_retries: int = 4, timeout: int = 60) -> requests.Response:
+                       max_retries: int = 4, timeout: int = 60,
+                       verify: bool = True) -> requests.Response:
     last: Exception | None = None
     for attempt in range(max_retries):
         try:
             r = requests.get(url, params=params, headers=headers,
-                              timeout=timeout, stream=False)
+                              timeout=timeout, stream=False, verify=verify)
             if r.status_code == 200:
                 return r
             if r.status_code in (429, 500, 502, 503, 504):
@@ -46,12 +47,12 @@ def head_last_modified(url: str) -> Optional[str]:
 
 
 def download_to(url: str, dest: Path, params: dict | None = None,
-                 headers: dict | None = None) -> dict:
+                 headers: dict | None = None, verify: bool = True) -> dict:
     """Stream-download a file. Returns {bytes, duration_s}."""
     dest = Path(dest); dest.parent.mkdir(parents=True, exist_ok=True)
     t0 = time.time()
     with requests.get(url, params=params, headers=headers,
-                         stream=True, timeout=300) as r:
+                         stream=True, timeout=300, verify=verify) as r:
         r.raise_for_status()
         total = 0
         with dest.open("wb") as f:

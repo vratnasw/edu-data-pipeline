@@ -38,22 +38,15 @@ def ca_lao_budget_check_update(year=None):
 
 @register_collector("ftm_education_finance", "political", api_key_env="FTM_API_KEY")
 def ftm_education_finance(year=None, force: bool = False) -> dict:
-    if not has_api_key("FTM_API_KEY"):
-        return {"ok": False, "skipped": True, "reason": "FTM_API_KEY missing"}
-    out_key = make_raw_key("ftm_education_finance", year or "latest")
-    url = "https://api.followthemoney.org"
-    params = {"key": os.environ["FTM_API_KEY"], "s": "CA",
-                "y": year if year else None}
-    try:
-        r = get_with_backoff(url, params=params)
-        rows = r.json()
-        if isinstance(rows, dict): rows = rows.get("records", [])
-    except Exception as e:  # noqa: BLE001
-        return {"ok": False, "skipped": True, "reason": f"ftm: {e}"}
-    if not rows:
-        return {"ok": False, "skipped": True, "reason": "no ftm rows"}
-    rep = upload_dataframe(pd.DataFrame(rows), out_key)
-    return {"ok": True, "key": out_key, **rep}
+    """OpenSecrets / FollowTheMoney API was PERMANENTLY DISCONTINUED 2025-04-15.
+    The API endpoint is dead; no replacement is offered.
+    Track 1 marks this source as `deferred: True`. Future replacement
+    candidates: ca_sos_elections (already wired) + FEC bulk for federal,
+    plus CA Fair Political Practices Commission filings."""
+    return {"ok": False, "skipped": True,
+              "reason": "API permanently discontinued 2025-04-15 (OpenSecrets/FTM)",
+              "deferred": True,
+              "replacement": "ca_sos_elections + FEC bulk (no direct CA education-finance feed available)"}
 
 
 def ftm_education_finance_check_update(year=None):

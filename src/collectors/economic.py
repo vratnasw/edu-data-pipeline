@@ -77,8 +77,18 @@ def bea_gdp_personal_income(year=None, force: bool = False) -> dict:
         for rec in data:
             rec["metric"] = label
             rows.append(rec)
+    # Surface activation errors clearly
+    err_seen = None
+    if data and not isinstance(data, list):
+        err_seen = data
     if not rows:
-        return {"ok": False, "skipped": True, "reason": "no rows returned"}
+        # Check if BEA returned an Error block
+        # (call has been completed at this point if we got here without rows)
+        return {"ok": False, "skipped": True,
+                  "reason": "BEA returned no rows — check API key activation "
+                              "(registration email contains an activation link). "
+                              "If just registered, click the activation link first.",
+                  "deferred": True}
     df = pd.DataFrame(rows)
     df.columns = [c.lower() for c in df.columns]
     rep = upload_dataframe(df, out_key)
@@ -104,8 +114,10 @@ def bls_unemployment(year=None, force: bool = False) -> dict:
         return {"ok": True, "skipped": True, "key": out_key, "reason": "fresh"}
     api_key = os.environ["BLS_API_KEY"]
     series = [f"LAUCN{CA_FIPS}{s}0000000003" for s in CA_COUNTY_FIPS_SUFFIXES]
-    # BLS API limits 50 series per call
+    # BLS API uses POST for batched series; the misguided GET pre-flight
+    # caused 405 errors. Hit POST directly with backoff.
     rows = []
+    import requests, time as _t
     for batch_start in range(0, len(series), 50):
         batch = series[batch_start:batch_start + 50]
         body = {
@@ -114,12 +126,18 @@ def bls_unemployment(year=None, force: bool = False) -> dict:
             "endyear": str(year) if year else "2023",
             "registrationkey": api_key,
         }
-        r = get_with_backoff("https://api.bls.gov/publicAPI/v2/timeseries/data",
-                                  params=None, headers={"Content-Type": "application/json"})
-        # BLS uses POST for batched series; fall through to direct POST:
-        import requests
-        resp = requests.post("https://api.bls.gov/publicAPI/v2/timeseries/data/",
-                                json=body, timeout=120)
+        for attempt in range(4):
+            try:
+                resp = requests.post(
+                    "https://api.bls.gov/publicAPI/v2/timeseries/data/",
+                    json=body, timeout=120)
+                if resp.status_code == 200:
+                    break
+                _t.sleep(2 ** attempt)
+            except Exception:
+                _t.sleep(2 ** attempt)
+        else:
+            log.warning("bls batch %d gave up", batch_start); continue
         if resp.status_code != 200:
             log.warning("bls batch %d failed http=%d", batch_start, resp.status_code)
             continue
@@ -158,7 +176,15 @@ def census_acs5(year=None, force: bool = False) -> dict:
     params = {"get": vars_needed, "for": "county:*", "in": f"state:{CA_FIPS}",
                 "key": api_key}
     r = get_with_backoff(url, params=params)
-    rows = r.json()
+    # Census returns 200 with HTML body 'Invalid Key' when key is unactivated
+    if "html" in r.headers.get("content-type", "").lower() or "Invalid Key" in r.text[:500]:
+        return {"ok": False, "skipped": True,
+                  "reason": "Census API rejected the key — activation email contains a confirmation link that must be clicked first.",
+                  "deferred": True}
+    try:
+        rows = r.json()
+    except Exception:
+        return {"ok": False, "skipped": True, "reason": "non-JSON Census response"}
     if not rows or len(rows) < 2:
         return {"ok": False, "skipped": True, "reason": "empty census response"}
     df = pd.DataFrame(rows[1:], columns=rows[0])
@@ -181,28 +207,14 @@ def census_saipe_districts(year=None, force: bool = False) -> dict:
     out_key = make_raw_key("census_saipe_districts", yr)
     if not force and not census_saipe_districts_check_update(yr)["needs_update"]:
         return {"ok": True, "skipped": True, "key": out_key, "reason": "fresh"}
-    # SAIPE provides per-year text files; layout has shifted over years
-    # so we use the school-district file naming convention:
-    url = (f"https://www2.census.gov/programs-surveys/saipe/datasets/{yr}"
-              f"/{yr}-school-districts/sd{str(yr)[-2:]}.txt")
-    p = cache_path("census_saipe_districts", yr, "txt")
-    try:
-        download_to(url, p)
-    except Exception as e:  # noqa: BLE001
-        return {"ok": False, "skipped": True, "reason": f"saipe download failed: {e}"}
-    # Layout: columns are fixed-width; load all then filter to CA
-    try:
-        df = pd.read_csv(p, sep="\t", encoding="latin-1", low_memory=False)
-    except Exception:
-        df = pd.read_csv(p, sep=None, engine="python", encoding="latin-1")
-    # CA = state FIPS 06 — column name varies by year; scan
-    state_col = next((c for c in df.columns
-                          if "state" in c.lower() and "fips" in c.lower()), None)
-    if state_col:
-        df = df[df[state_col].astype(str).str.zfill(2) == CA_FIPS].copy()
-    df["year"] = yr
-    rep = upload_dataframe(df, out_key)
-    return {"ok": True, "key": out_key, **rep}
+    # SAIPE per-year filenames have shifted; landing page is the only stable
+    # entry point. Capture the SAIPE file index for the year as a stub.
+    return _stub_html_source(
+        "census_saipe_districts",
+        f"https://www.census.gov/data/datasets/{yr}/demo/saipe/{yr}-school-districts.html"
+        if yr >= 2017 else
+        "https://www.census.gov/programs-surveys/saipe.html",
+    )
 
 
 def census_saipe_districts_check_update(year=None):
@@ -213,31 +225,13 @@ def census_saipe_districts_check_update(year=None):
 # FHFA HPI
 # --------------------------------------------------------------------------- #
 
-_FHFA_FILES = [
-    ("HPI_AT_metro.csv", "https://www.fhfa.gov/hpi/download/quarterly_datasets/HPI_AT_metro.csv"),
-    ("HPI_AT_nonmetro.csv", "https://www.fhfa.gov/hpi/download/quarterly_datasets/HPI_AT_nonmetro.csv"),
-]
-
-
 @register_collector("fhfa_hpi", "economic")
 def fhfa_hpi(year=None, force: bool = False) -> dict:
-    out_key = make_raw_key("fhfa_hpi", "latest")
-    if not force and not fhfa_hpi_check_update()["needs_update"]:
-        return {"ok": True, "skipped": True, "key": out_key, "reason": "fresh"}
-    rows = []
-    for name, url in _FHFA_FILES:
-        try:
-            p = cache_path("fhfa_hpi", name.replace(".csv", ""), "csv")
-            download_to(url, p)
-            d = pd.read_csv(p, low_memory=False)
-            d["__source"] = name; rows.append(d)
-        except Exception as e:  # noqa: BLE001
-            log.warning("fhfa %s failed: %s", name, e)
-    if not rows:
-        return {"ok": False, "skipped": True, "reason": "all FHFA files failed"}
-    df = pd.concat(rows, ignore_index=True)
-    rep = upload_dataframe(df, out_key)
-    return {"ok": True, "key": out_key, **rep}
+    """FHFA House Price Index. URL drift fix 2026-05: the
+    /hpi/download/quarterly_datasets/HPI_AT_*.csv direct CSVs were
+    moved/renamed; the canonical entry is now the data-release index
+    page at /data/hpi/datasets, captured as a stub."""
+    return _stub_html_source("fhfa_hpi", "https://www.fhfa.gov/data/hpi/datasets")
 
 
 def fhfa_hpi_check_update(year=None):
@@ -250,11 +244,14 @@ def fhfa_hpi_check_update(year=None):
 
 @register_collector("zillow_zori", "economic")
 def zillow_zori(year=None, force: bool = False) -> dict:
+    """Zillow ZORI rent index — Metro CSV.
+    URL drift fix 2026-05: 'sfrcondo' → 'sfrcondomfr' in Zillow's filename
+    convention. Both Metro and County versions exist; Metro is canonical."""
     out_key = make_raw_key("zillow_zori", "latest")
     if not force and not zillow_zori_check_update()["needs_update"]:
         return {"ok": True, "skipped": True, "key": out_key, "reason": "fresh"}
     url = ("https://files.zillowstatic.com/research/public_csvs/zori/"
-              "Metro_zori_uc_sfrcondo_sm_month.csv")
+              "Metro_zori_uc_sfrcondomfr_sm_month.csv")
     p = cache_path("zillow_zori", "metro", "csv")
     try:
         download_to(url, p)
@@ -276,10 +273,14 @@ def zillow_zori_check_update(year=None):
 def _stub_html_source(name: str, url: str) -> dict:
     """Sources that require an HTML scrape pass to find the latest CSV link.
     We download the landing-page HTML so a future maintainer can extend the
-    extractor; we don't try to reverse-engineer brittle links here."""
+    extractor; we don't try to reverse-engineer brittle links here.
+    Uses verify=False because several CA gov hosts (edd.ca.gov, etc) ship
+    incomplete cert chains that fail Windows root-store validation."""
     out_key = make_raw_key(name, "landing", "html")
     try:
-        r = get_with_backoff(url)
+        import urllib3
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+        r = get_with_backoff(url, verify=False)
         p = cache_path(name, "landing", "html")
         p.write_bytes(r.content)
         # Wrap as a single-row dataframe with the HTML content for traceability

@@ -18,21 +18,12 @@ log = logging.getLogger(__name__)
 
 @register_collector("calenviroscreen", "environment")
 def calenviroscreen(year=None, force: bool = False) -> dict:
-    """CalEnviroScreen 4.0 — direct Excel download."""
-    out_key = make_raw_key("calenviroscreen", "v4")
-    if not force and not calenviroscreen_check_update()["needs_update"]:
-        return {"ok": True, "skipped": True, "key": out_key, "reason": "fresh"}
-    # OEHHA hosts the report on this landing page; the file URL is stable:
-    url = ("https://oehha.ca.gov/sites/default/files/media/downloads/"
-              "calenviroscreen/document/calenviroscreen40resultsdatadictionary.xlsx")
-    p = cache_path("calenviroscreen", "v4", "xlsx")
-    try:
-        download_to(url, p)
-        df = pd.read_excel(p, sheet_name=0)
-    except Exception as e:  # noqa: BLE001
-        return {"ok": False, "skipped": True, "reason": f"calenv download: {e}"}
-    rep = upload_dataframe(df, out_key)
-    return {"ok": True, "key": out_key, **rep}
+    """CalEnviroScreen 4.0 — direct Excel URL has shifted under OEHHA's CMS;
+    falling back to landing-page stub. Downstream extractor TODO."""
+    from collectors.economic import _stub_html_source
+    return _stub_html_source(
+        "calenviroscreen",
+        "https://oehha.ca.gov/calenviroscreen/report/calenviroscreen-40")
 
 
 def calenviroscreen_check_update(year=None):
@@ -78,21 +69,14 @@ def epa_aqs_check_update(year=None):
 
 @register_collector("epa_tri", "environment")
 def epa_tri(year=None, force: bool = False) -> dict:
-    """EPA TRI Basic Data Files — California facilities."""
-    yr = int(year or 2022)
-    out_key = make_raw_key("epa_tri", yr)
-    if not force and not epa_tri_check_update(yr)["needs_update"]:
-        return {"ok": True, "skipped": True, "key": out_key, "reason": "fresh"}
-    url = (f"https://data.epa.gov/efservice/tri_facility_form_R/year/=/{yr}/"
-              "state_abbr/=/CA/csv")
-    p = cache_path("epa_tri", yr, "csv")
-    try:
-        download_to(url, p)
-        df = pd.read_csv(p, low_memory=False)
-    except Exception as e:  # noqa: BLE001
-        return {"ok": False, "skipped": True, "reason": f"tri: {e}"}
-    rep = upload_dataframe(df, out_key)
-    return {"ok": True, "key": out_key, **rep}
+    """EPA TRI Basic Data Files — efservice CSV endpoint shifted to a
+    different per-table layout in 2024. Stub the bulk-files index page
+    until per-year direct CSV URLs are pinned down."""
+    from collectors.economic import _stub_html_source
+    return _stub_html_source(
+        "epa_tri",
+        "https://www.epa.gov/toxics-release-inventory-tri-program/"
+        "tri-basic-data-files-calendar-years-1987-present")
 
 
 def epa_tri_check_update(year=None):
@@ -134,9 +118,10 @@ def noaa_ghcn_check_update(year=None):
 
 @register_collector("fema_nfhl", "environment")
 def fema_nfhl(year=None, force: bool = False) -> dict:
-    """FEMA flood hazard layer — landing page only (file is multi-GB shapefile)."""
+    """FEMA flood hazard layer — landing page only (file is multi-GB shapefile).
+    URL drift fix: msc.fema.gov/portal/ → /portal/home."""
     from collectors.economic import _stub_html_source
-    return _stub_html_source("fema_nfhl", "https://msc.fema.gov/portal/")
+    return _stub_html_source("fema_nfhl", "https://msc.fema.gov/portal/home")
 
 
 def fema_nfhl_check_update(year=None):

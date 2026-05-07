@@ -71,15 +71,34 @@ def upload(local_path: str | Path, key: str) -> dict:
 
 
 def download(key: str, dest: Optional[Path] = None) -> pd.DataFrame:
-    """Download key to a temp/local path, then read with the right reader."""
-    import tempfile
+    """Download key and return a DataFrame.
+
+    On Windows, s3transfer's mkstemp+rename cycle hits PermissionError
+    [WinError 32] when the source temp handle isn't released before the
+    rename. We use `get_object` + `BytesIO` to bypass the rename path
+    entirely; if the user provides an explicit `dest`, that path is used
+    via the slower (but caller-controlled) download_file route."""
+    import io
     c = _client()
-    if dest is None:
-        dest = Path(tempfile.mkstemp(suffix=Path(key).suffix)[1])
-    dest = Path(dest)
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    c.download_file(bucket_name(), key, str(dest))
-    return _read_any(dest)
+    if dest is not None:
+        dest = Path(dest); dest.parent.mkdir(parents=True, exist_ok=True)
+        c.download_file(bucket_name(), key, str(dest))
+        return _read_any(dest)
+    # In-memory path: avoids the temp-file rename race entirely.
+    obj = c.get_object(Bucket=bucket_name(), Key=key)
+    body = obj["Body"].read()
+    suffix = Path(key).suffix.lower()
+    if suffix == ".parquet":
+        return pd.read_parquet(io.BytesIO(body))
+    if suffix == ".csv":
+        return pd.read_csv(io.BytesIO(body))
+    if suffix == ".tsv":
+        return pd.read_csv(io.BytesIO(body), sep="\t")
+    if suffix in (".xlsx", ".xls"):
+        return pd.read_excel(io.BytesIO(body))
+    if suffix == ".json":
+        return pd.read_json(io.BytesIO(body))
+    raise ValueError(f"unrecognized file type: {suffix}")
 
 
 def _read_any(path: Path) -> pd.DataFrame:

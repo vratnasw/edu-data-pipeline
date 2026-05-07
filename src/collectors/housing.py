@@ -28,21 +28,11 @@ def hud_affh_check_update(year=None):
 
 @register_collector("hud_lihtc", "housing")
 def hud_lihtc(year=None, force: bool = False) -> dict:
-    """HUD LIHTC database CSV — point locations."""
-    out_key = make_raw_key("hud_lihtc", "latest")
-    if not force and not hud_lihtc_check_update()["needs_update"]:
-        return {"ok": True, "skipped": True, "key": out_key, "reason": "fresh"}
-    url = "https://www.huduser.gov/portal/Datasets/lihtc/lihtcpub.csv"
-    p = cache_path("hud_lihtc", "all", "csv")
-    try:
-        download_to(url, p)
-        df = pd.read_csv(p, low_memory=False, encoding="latin-1")
-        if "PROJ_ST" in df.columns:
-            df = df[df["PROJ_ST"] == "CA"].copy()
-    except Exception as e:  # noqa: BLE001
-        return {"ok": False, "skipped": True, "reason": f"lihtc: {e}"}
-    rep = upload_dataframe(df, out_key)
-    return {"ok": True, "key": out_key, **rep}
+    """HUD LIHTC — direct CSV returns 202 with empty body (HUD anti-bot
+    behavior). Fall back to landing-page stub; downstream extractor TODO."""
+    from collectors.economic import _stub_html_source
+    return _stub_html_source("hud_lihtc",
+                                  "https://www.huduser.gov/portal/datasets/lihtc.html")
 
 
 def hud_lihtc_check_update(year=None):
@@ -51,10 +41,12 @@ def hud_lihtc_check_update(year=None):
 
 @register_collector("opp_insights_neighborhood", "housing")
 def opp_insights_neighborhood(year=None, force: bool = False) -> dict:
-    """Opportunity Insights neighborhood + county outcomes."""
-    out_key = make_raw_key("opp_insights_neighborhood", "latest")
-    if not force and not opp_insights_neighborhood_check_update()["needs_update"]:
-        return {"ok": True, "skipped": True, "key": out_key, "reason": "fresh"}
+    """Opportunity Insights neighborhood + county outcomes.
+    URL drift: the 2018/10 direct-CSV paths now 404. Fall back to
+    landing-page stub since the new download UX is button-click only."""
+    from collectors.economic import _stub_html_source
+    return _stub_html_source("opp_insights_neighborhood",
+                                  "https://opportunityinsights.org/data/")
     files = [
         ("https://opportunityinsights.org/wp-content/uploads/2018/10/county_outcomes.csv",
           "county_outcomes"),
