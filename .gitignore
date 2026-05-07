@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+build/
+dist/
+*.egg-info/
+
+# Virtual envs
+venv/
+env/
+.venv/
+
+# Caches
+.pytest_cache/
+.ruff_cache/
+
+# IDE
+.vscode/
+.idea/
+
+# Local data caches (regenerable)
+data_cache/
+logs/*.json
+
+# Secrets
+.env
+.env.*
+!.env.example
+secrets/
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,250 @@
+storage:
+  bucket_name: edu-research-data
+  endpoint_url_env: R2_ENDPOINT_URL
+  raw_prefix: raw
+  processed_prefix: processed
+  public_prefix: public
+  joined_prefix: processed/joined
+
+geography:
+  target_crs: "EPSG:4326"
+  projected_crs: "EPSG:3310"   # CA Albers — used for distance computations
+  ca_fips: "06"
+  cds_spine_path: processed/education/ca_wide_features.parquet
+
+years:
+  start: 2010
+  end: 2023
+
+quality:
+  max_missing_pct: 0.40
+  imputation_strategy: hierarchical    # school → district → county → state
+
+sources:
+  # ---------------- ECONOMIC ---------------- #
+  bea_gdp_personal_income:
+    url: "https://apps.bea.gov/api/data"
+    api_key_env: BEA_API_KEY
+    frequency: annual
+    geographic_resolution: county
+    join_strategy: county_direct
+  bls_unemployment:
+    url: "https://api.bls.gov/publicAPI/v2/timeseries/data"
+    api_key_env: BLS_API_KEY
+    frequency: monthly
+    geographic_resolution: county
+    join_strategy: county_direct
+  census_acs5:
+    url: "https://api.census.gov/data"
+    api_key_env: CENSUS_API_KEY
+    frequency: annual
+    geographic_resolution: county
+    join_strategy: county_direct
+  census_saipe_districts:
+    url: "https://www2.census.gov/programs-surveys/saipe/datasets"
+    api_key_env: null
+    frequency: annual
+    geographic_resolution: school_district
+    join_strategy: county_direct   # via cds → district FIPS
+  fhfa_hpi:
+    url: "https://www.fhfa.gov/HPI/Datasets"
+    api_key_env: null
+    frequency: quarterly
+    geographic_resolution: metro
+    join_strategy: county_direct
+  zillow_zori:
+    url: "https://files.zillowstatic.com/research/public_csvs/zori/Metro_zori_uc_sfrcondo_sm_month.csv"
+    api_key_env: null
+    frequency: monthly
+    geographic_resolution: metro
+    join_strategy: county_direct
+  irs_soi:
+    url: "https://www.irs.gov/statistics/soi-tax-stats-county-data"
+    api_key_env: null
+    frequency: annual
+    geographic_resolution: county
+    join_strategy: county_direct
+  ca_sco_local_finance:
+    url: "https://bythenumbers.sco.ca.gov/resource"
+    api_key_env: null
+    frequency: annual
+    geographic_resolution: county
+    join_strategy: county_direct
+  ca_boe_property_tax:
+    url: "https://www.boe.ca.gov/dataportal"
+    api_key_env: null
+    frequency: annual
+    geographic_resolution: county
+    join_strategy: county_direct
+  ca_edd_lmi:
+    url: "https://labormarketinfo.edd.ca.gov"
+    api_key_env: null
+    frequency: monthly
+    geographic_resolution: county
+    join_strategy: county_direct
+
+  # ---------------- HEALTH ---------------- #
+  cdc_places:
+    url: "https://data.cdc.gov/resource/cwsq-ngmh.json"
+    api_key_env: null
+    frequency: annual
+    geographic_resolution: census_tract
+    join_strategy: tract_spatial
+  ca_chks:
+    url: "https://chks.wested.org/resources/"
+    api_key_env: null
+    frequency: biennial
+    geographic_resolution: school_district
+    join_strategy: county_direct
+  ca_cdph_county_indicators:
+    url: "https://www.cdph.ca.gov/Programs/CCDPHP/DCDIC/CDSRB/Pages/ReportandDataRequest.aspx"
+    api_key_env: null
+    frequency: annual
+    geographic_resolution: county
+    join_strategy: county_direct
+
+  # ---------------- ENVIRONMENT ---------------- #
+  calenviroscreen:
+    url: "https://oehha.ca.gov/calenviroscreen/report/calenviroscreen-40"
+    api_key_env: null
+    frequency: triennial
+    geographic_resolution: census_tract
+    join_strategy: tract_spatial
+  epa_aqs:
+    url: "https://aqs.epa.gov/aqsweb/airdata"
+    api_key_env: null
+    frequency: annual
+    geographic_resolution: monitor_point
+    join_strategy: point_proximity
+  epa_tri:
+    url: "https://www.epa.gov/toxics-release-inventory-tri-program/tri-basic-data-files-calendar-years-1987-present"
+    api_key_env: null
+    frequency: annual
+    geographic_resolution: facility_point
+    join_strategy: point_proximity
+  noaa_ghcn:
+    url: "https://www.ncei.noaa.gov/cdo-web/api/v2"
+    api_key_env: NOAA_TOKEN
+    frequency: daily
+    geographic_resolution: station_point
+    join_strategy: point_proximity
+  fema_nfhl:
+    url: "https://msc.fema.gov/portal/downloadProduct"
+    api_key_env: null
+    frequency: irregular
+    geographic_resolution: polygon
+    join_strategy: tract_spatial
+
+  # ---------------- HOUSING ---------------- #
+  hud_affh:
+    url: "https://www.huduser.gov/portal/datasets/affh.html"
+    api_key_env: null
+    frequency: annual
+    geographic_resolution: census_tract
+    join_strategy: tract_spatial
+  hud_lihtc:
+    url: "https://www.huduser.gov/portal/datasets/lihtc.html"
+    api_key_env: null
+    frequency: annual
+    geographic_resolution: project_point
+    join_strategy: point_proximity
+  opp_insights_neighborhood:
+    url: "https://opportunityinsights.org/data/"
+    api_key_env: null
+    frequency: irregular
+    geographic_resolution: census_tract
+    join_strategy: tract_spatial
+
+  # ---------------- SAFETY ---------------- #
+  ca_doj_openjustice:
+    url: "https://openjustice.doj.ca.gov/api/v1/crimes"
+    api_key_env: null
+    frequency: annual
+    geographic_resolution: jurisdiction
+    join_strategy: county_direct
+  ojjdp_county:
+    url: "https://www.ojjdp.gov/ojstatbb/ezacjrp/"
+    api_key_env: null
+    frequency: annual
+    geographic_resolution: county
+    join_strategy: county_direct
+
+  # ---------------- SOCIAL ---------------- #
+  ca_dhcs_medical:
+    url: "https://www.dhcs.ca.gov/dataandstats/statistics/Pages/default.aspx"
+    api_key_env: null
+    frequency: monthly
+    geographic_resolution: county
+    join_strategy: county_direct
+  ca_cdss_caseloads:
+    url: "https://www.cdss.ca.gov/inforesources/Data-Portal"
+    api_key_env: null
+    frequency: monthly
+    geographic_resolution: county
+    join_strategy: county_direct
+
+  # ---------------- POLITICAL ---------------- #
+  ca_sos_elections:
+    url: "https://www.sos.ca.gov/elections/prior-elections/statewide-election-results"
+    api_key_env: null
+    frequency: biennial
+    geographic_resolution: county
+    join_strategy: county_direct
+  ca_lao_budget:
+    url: "https://lao.ca.gov/Publications"
+    api_key_env: null
+    frequency: annual
+    geographic_resolution: state
+    join_strategy: county_direct
+  ftm_education_finance:
+    url: "https://api.followthemoney.org"
+    api_key_env: FTM_API_KEY
+    frequency: irregular
+    geographic_resolution: state
+    join_strategy: county_direct
+
+  # ---------------- INFRASTRUCTURE ---------------- #
+  fcc_broadband:
+    url: "https://www.fcc.gov/general/broadband-deployment-data"
+    api_key_env: null
+    frequency: biannual
+    geographic_resolution: county
+    join_strategy: county_direct
+  nces_facilities:
+    url: "https://nces.ed.gov/surveys/frss/publications/20190"
+    api_key_env: null
+    frequency: irregular
+    geographic_resolution: school
+    join_strategy: county_direct
+  usac_erate:
+    url: "https://opendata.usac.org/E-Rate"
+    api_key_env: null
+    frequency: annual
+    geographic_resolution: school
+    join_strategy: county_direct
+
+  # ---------------- EDUCATION ---------------- #
+  seda:
+    url: "https://edopportunity.org/getdata/"
+    api_key_env: null
+    frequency: annual
+    geographic_resolution: school_district
+    join_strategy: county_direct
+  nces_ccd:
+    url: "https://nces.ed.gov/ccd/files.asp"
+    api_key_env: null
+    frequency: annual
+    geographic_resolution: school
+    join_strategy: county_direct
+  edfacts_assessments:
+    url: "https://www.ed.gov/about/ed-overview/EDFacts"
+    api_key_env: null
+    frequency: annual
+    geographic_resolution: school_district
+    join_strategy: county_direct
+  opp_insights_college_mobility:
+    url: "https://opportunityinsights.org/data/"
+    api_key_env: null
+    frequency: irregular
+    geographic_resolution: high_school
+    join_strategy: county_direct
