@@ -1,0 +1,351 @@
+{
+  "generated_at": "2026-05-14T10:11:04",
+  "elapsed_s": 704.6,
+  "verdict": "GO",
+  "n_critical_issues": 0,
+  "n_warning_issues": 0,
+  "phases": {
+    "phase1": {
+      "checks": [
+        {
+          "name": "symlink_farm_created",
+          "pass": true,
+          "msg": "\\tmp\\lightning_sim with 7 entries",
+          "severity": "info"
+        },
+        {
+          "name": "edu-gnn_preflight_pass",
+          "pass": true,
+          "msg": "OK",
+          "severity": "info"
+        },
+        {
+          "name": "edu-world-model_preflight_pass",
+          "pass": true,
+          "msg": "OK",
+          "severity": "info"
+        },
+        {
+          "name": "edu-rl-agent_preflight_pass",
+          "pass": true,
+          "msg": "OK",
+          "severity": "info"
+        }
+      ]
+    },
+    "phase2_3": {
+      "checks": [
+        {
+          "name": "graph_script_present",
+          "pass": true,
+          "msg": "",
+          "severity": "info"
+        },
+        {
+          "name": "full_graph_built",
+          "pass": true,
+          "msg": "took 14.1s",
+          "severity": "info"
+        },
+        {
+          "name": "graph_build_under_10min",
+          "pass": true,
+          "msg": "14.1s",
+          "severity": "info"
+        },
+        {
+          "name": "edges_('school', 'in', 'district')",
+          "pass": true,
+          "msg": "9834 edges",
+          "severity": "info"
+        },
+        {
+          "name": "edges_('district', 'in', 'county')",
+          "pass": true,
+          "msg": "1010 edges",
+          "severity": "info"
+        },
+        {
+          "name": "edges_('school', 'near', 'school')",
+          "pass": true,
+          "msg": "96132 edges",
+          "severity": "info"
+        },
+        {
+          "name": "edges_('district', 'near', 'district')",
+          "pass": true,
+          "msg": "8372 edges",
+          "severity": "info"
+        },
+        {
+          "name": "edges_('school', 'similar_to', 'school')",
+          "pass": true,
+          "msg": "187128 edges",
+          "severity": "info"
+        },
+        {
+          "name": "edges_('district', 'similar_to', 'district')",
+          "pass": true,
+          "msg": "18038 edges",
+          "severity": "info"
+        },
+        {
+          "name": "feat_dim_school",
+          "pass": true,
+          "msg": "dim=10",
+          "severity": "info"
+        },
+        {
+          "name": "feat_dim_district",
+          "pass": true,
+          "msg": "dim=24",
+          "severity": "info"
+        },
+        {
+          "name": "feat_dim_county",
+          "pass": true,
+          "msg": "dim=14",
+          "severity": "info"
+        },
+        {
+          "name": "no_nan_school",
+          "pass": true,
+          "msg": "clean",
+          "severity": "info"
+        },
+        {
+          "name": "no_nan_district",
+          "pass": true,
+          "msg": "clean",
+          "severity": "info"
+        },
+        {
+          "name": "no_nan_county",
+          "pass": true,
+          "msg": "clean",
+          "severity": "info"
+        },
+        {
+          "name": "master_panel_no_zero_cols",
+          "pass": true,
+          "msg": "0 all-zero cols",
+          "severity": "info"
+        }
+      ]
+    },
+    "phase4": {
+      "checks": [
+        {
+          "name": "edu-gnn_save_to_r2",
+          "pass": true,
+          "msg": "OK",
+          "severity": "info"
+        },
+        {
+          "name": "edu-gnn_restore_from_r2",
+          "pass": true,
+          "msg": "OK",
+          "severity": "info"
+        },
+        {
+          "name": "edu-world-model_save_to_r2",
+          "pass": true,
+          "msg": "OK",
+          "severity": "info"
+        },
+        {
+          "name": "edu-world-model_restore_from_r2",
+          "pass": true,
+          "msg": "OK",
+          "severity": "info"
+        },
+        {
+          "name": "edu-rl-agent_save_to_r2",
+          "pass": true,
+          "msg": "OK",
+          "severity": "info"
+        },
+        {
+          "name": "edu-rl-agent_restore_from_r2",
+          "pass": true,
+          "msg": "OK",
+          "severity": "info"
+        }
+      ]
+    },
+    "phase5": {
+      "checks": [
+        {
+          "name": "edu-gnn_nan_single_recover",
+          "pass": true,
+          "msg": "OK",
+          "severity": "info"
+        },
+        {
+          "name": "edu-world-model_nan_single_recover",
+          "pass": true,
+          "msg": "OK",
+          "severity": "info"
+        },
+        {
+          "name": "edu-rl-agent_nan_single_recover",
+          "pass": true,
+          "msg": "OK",
+          "severity": "info"
+        },
+        {
+          "name": "abort_after_5_fires",
+          "pass": true,
+          "msg": "ACTIONS ['recover', 'recover', 'recover', 'recover', 'abort', 'abort']",
+          "severity": "info"
+        }
+      ]
+    },
+    "phase6": {
+      "checks": [
+        {
+          "name": "r2_failure_graceful_degradation",
+          "pass": true,
+          "msg": "UPLOAD_OK False\nEXISTS None",
+          "severity": "info"
+        }
+      ]
+    },
+    "phase7": {
+      "checks": [
+        {
+          "name": "layer3_to_layer4_handoff_present",
+          "pass": true,
+          "msg": "C:\\Users\\visha\\Downloads\\r_and_d\\edu-spatial-rl\\layer3_to_layer4_handoff.json",
+          "severity": "info"
+        },
+        {
+          "name": "layer4_to_layer5_handoff_present",
+          "pass": true,
+          "msg": "C:\\Users\\visha\\Downloads\\r_and_d\\edu-gnn\\layer4_to_layer5_handoff.json",
+          "severity": "info"
+        },
+        {
+          "name": "layer5_to_layer6_handoff_present",
+          "pass": true,
+          "msg": "C:\\Users\\visha\\Downloads\\r_and_d\\edu-world-model\\layer5_to_layer6_handoff.json",
+          "severity": "info"
+        },
+        {
+          "name": "l4_hidden_eq_l5_state",
+          "pass": true,
+          "msg": "l4=128 l5_state=128",
+          "severity": "info"
+        },
+        {
+          "name": "l5_action_eq_l6_action",
+          "pass": true,
+          "msg": "l5=5 l6=5",
+          "severity": "info"
+        }
+      ]
+    },
+    "phase8": {
+      "checks": [
+        {
+          "name": "cpu_peak_gb",
+          "pass": true,
+          "msg": "2.03 GB",
+          "severity": "info"
+        },
+        {
+          "name": "gpu_estimate_under_30gb",
+          "pass": true,
+          "msg": "est=3.04 GB (40GB A100)",
+          "severity": "info"
+        },
+        {
+          "name": "recommended_batch_size_layer4",
+          "pass": true,
+          "msg": "bs=1 (full-graph trainer, no minibatching)",
+          "severity": "info"
+        }
+      ]
+    },
+    "phase9": {
+      "checks": [
+        {
+          "name": "edu-gnn_config_valid",
+          "pass": true,
+          "msg": "clean",
+          "severity": "info"
+        },
+        {
+          "name": "edu-world-model_config_valid",
+          "pass": true,
+          "msg": "clean",
+          "severity": "info"
+        },
+        {
+          "name": "edu-rl-agent_config_valid",
+          "pass": true,
+          "msg": "clean",
+          "severity": "info"
+        }
+      ]
+    },
+    "phase10": {
+      "checks": [
+        {
+          "name": "cpu_sec_per_epoch",
+          "pass": true,
+          "msg": "14.6s",
+          "severity": "info"
+        },
+        {
+          "name": "gpu_sec_per_epoch_estimate",
+          "pass": true,
+          "msg": "0.7s @20x",
+          "severity": "info"
+        },
+        {
+          "name": "L4_full_hours_estimate",
+          "pass": true,
+          "msg": "0.1h (300 epochs)",
+          "severity": "info"
+        },
+        {
+          "name": "L4_under_12h",
+          "pass": true,
+          "msg": "0.1h",
+          "severity": "info"
+        }
+      ]
+    },
+    "phase11": {
+      "checks": [
+        {
+          "name": "layer3_to_layer4_complete",
+          "pass": true,
+          "msg": "all required fields populated",
+          "severity": "info"
+        },
+        {
+          "name": "layer4_to_layer5_complete",
+          "pass": true,
+          "msg": "all required fields populated",
+          "severity": "info"
+        },
+        {
+          "name": "layer5_to_layer6_complete",
+          "pass": true,
+          "msg": "all required fields populated",
+          "severity": "info"
+        },
+        {
+          "name": "layer5_to_layer6_verdict_pass",
+          "pass": true,
+          "msg": "verdict=pass",
+          "severity": "info"
+        }
+      ]
+    }
+  },
+  "issues": [],
+  "fixes_applied": []
+}
