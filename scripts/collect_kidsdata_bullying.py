@@ -149,17 +149,19 @@ def discover_dims(scraper, topic_id: int, slug: str) -> dict:
         return {"tfs": [], "chs": []}
     soup = BeautifulSoup(r.text, "html.parser")
     selects = soup.find_all("select", class_="medium")
-    tfs = []         # time-frame IDs (year ranges)
+    tfs = []         # time-frame IDs (year ranges OR single years)
     chs_per_dim = [] # category IDs per breakdown dimension
     for sel in selects:
         opts = sel.find_all("option")
         labels = [o.get_text(strip=True) for o in opts]
         vals = [o.get("value", "") for o in opts]
-        # Time-frame selector has options like '2017-2019', '2015-2017', etc.
-        if any(re.match(r"^\d{4}-\d{4}$", l) for l in labels):
+        # Time-frame selector: options like '2017-2019' OR '2020' (single year)
+        is_year_select = all(
+            re.match(r"^\d{4}(-\d{4})?$", l) for l in labels if l
+        )
+        if is_year_select and labels:
             tfs = [int(v) for v in vals if v.isdigit()]
         else:
-            # Breakdown dim — collect all numeric option values
             dim_ids = [int(v) for v in vals if v.isdigit()]
             if dim_ids:
                 chs_per_dim.append(dim_ids)

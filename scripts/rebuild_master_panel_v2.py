@@ -170,6 +170,8 @@ def main() -> int:
                           "kidsdata_foster")
     _merge_county_year("processed/canonical/kidsdata_bullying_overall.parquet",
                           "kidsdata_bullying")
+    _merge_county_year("processed/canonical/kidsdata_child_abuse_overall.parquet",
+                          "kidsdata_child_abuse")
 
     # ---- Track 1.5 single-year + year-only ---- #
     acs = _safe_download("processed/canonical/census_acs5.parquet")
