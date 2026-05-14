@@ -73,6 +73,11 @@ def main() -> int:
         if "year" in d.columns and "year_num" not in d.columns:
             d = d.rename(columns={"year": "year_num"})
         d["year_num"] = pd.to_numeric(d["year_num"], errors="coerce").astype("Int64")
+        # Drop columns already in panel (esp. county_name carry-throughs) to
+        # avoid pandas merge-suffix collision when we add multiple sources
+        already = set(panel.columns) - {"county_code", "year_num"}
+        d = d.drop(columns=[c for c in d.columns if c in already],
+                       errors="ignore")
         before = panel.shape
         panel = panel.merge(d, on=["county_code", "year_num"], how="left")
         added = [c for c in d.columns if c not in ("county_code", "year_num")]
@@ -172,6 +177,14 @@ def main() -> int:
                           "kidsdata_bullying")
     _merge_county_year("processed/canonical/kidsdata_child_abuse_overall.parquet",
                           "kidsdata_child_abuse")
+    _merge_county_year("processed/canonical/kidsdata_gang_overall.parquet",
+                          "kidsdata_gang")
+    _merge_county_year("processed/canonical/kidsdata_ipv_overall.parquet",
+                          "kidsdata_ipv")
+    _merge_county_year("processed/canonical/kidsdata_resilience_overall.parquet",
+                          "kidsdata_resilience")
+    _merge_county_year("processed/canonical/kidsdata_school_safety_overall.parquet",
+                          "kidsdata_school_safety")
 
     # ---- Track 1.5 single-year + year-only ---- #
     acs = _safe_download("processed/canonical/census_acs5.parquet")
