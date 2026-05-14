@@ -201,6 +201,7 @@ def main() -> int:
     _merge_district_year("processed/canonical/census_saipe.parquet", "census_saipe")
     _merge_district_static("processed/canonical/hud_lihtc_district.parquet", "hud_lihtc")
     _merge_district_static("processed/canonical/epa_tri_district.parquet", "epa_tri")
+    _merge_district_static("processed/canonical/sf_overlays_district.parquet", "sf_overlays")
 
     # ---- Validate ---- #
     if len(panel) != n_expected:
