@@ -166,6 +166,8 @@ def main() -> int:
     _merge_county_year("processed/canonical/bea.parquet", "bea")
     _merge_county_year("processed/canonical/bls_unemployment.parquet", "bls")
     _merge_county_year("processed/canonical/epa_aqs.parquet", "epa_aqs")
+    _merge_county_year("processed/canonical/kidsdata_foster_entries.parquet",
+                          "kidsdata_foster")
 
     # ---- Track 1.5 single-year + year-only ---- #
     acs = _safe_download("processed/canonical/census_acs5.parquet")
