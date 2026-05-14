@@ -92,6 +92,42 @@ STUBS = {
             "hud_affh_low_poverty_index",
         ],
     },
+    "kidsdata_foster_entries": {
+        "source": "kidsdata.org — Foster Care Entry Rates (by county)",
+        "landing_url": ("https://www.kidsdata.org/topic/14/foster-entries/table"
+                          "#fmt=2324&loc=2,127,347,...&tf=108"),
+        "attempted_url": "https://www.kidsdata.org/api/table/table",
+        "blocker": ("Three-layer block: (1) Cloudflare 'Just a moment...' "
+                       "JS challenge — passable via cloudscraper. (2) Export "
+                       "modal gated by Google reCAPTCHA — not solvable by "
+                       "automation. (3) /api/table/table endpoint exists and "
+                       "returns 500 without exact query schema built "
+                       "dynamically from the page UI state. Underlying source "
+                       "(UC Berkeley CCWIP at ccwip.berkeley.edu) is also a "
+                       "JS-rendered SPA with no scrapable HTML."),
+        "fallback": ("On Lightning AI: (option A) install playwright + "
+                       "headless Chromium (`pip install playwright && "
+                       "playwright install chromium`), load the kidsdata page, "
+                       "wait for the XHR to /api/table/table to complete, and "
+                       "intercept the JSON response. (option B) Use "
+                       "kidsdata.org's 'Email me this data' modal manually — "
+                       "they deliver CSVs in 5-10 min. (option C) Pull from "
+                       "the CCWIP API directly — Berkeley CCWIP serves data "
+                       "via Angular HTTP at "
+                       "ccwip.berkeley.edu/api/SecondaryAxisRequest with "
+                       "params for report_id + county_id."),
+        "deferred_columns": [
+            "kidsdata_foster_entry_rate_per_1k",
+            "kidsdata_foster_entry_count",
+        ],
+        "alternative_signal_already_present": (
+            "education spine column `foster_count` (from CDE DataQuest "
+            "chart_type 32) gives the point-in-time foster caseload by school. "
+            "This is a related but distinct signal — `foster_count` measures "
+            "current caseload, kidsdata_foster_entry_rate measures annual "
+            "turnover/inflow. Both are useful but the spine signal alone is "
+            "non-zero coverage for the master panel."),
+    },
     "fema_flood": {
         "source": "FEMA National Flood Hazard Layer (NFHL)",
         "landing_url": "https://msc.fema.gov/portal/advanceSearch",
