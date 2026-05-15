@@ -185,6 +185,21 @@ def main() -> int:
                           "kidsdata_resilience")
     _merge_county_year("processed/canonical/kidsdata_school_safety_overall.parquet",
                           "kidsdata_school_safety")
+    # Phase 20: 31 sub-section overall parquets from 5 top categories
+    for prefix in (
+        "kd_econ_income", "kd_econ_food", "kd_econ_homeless", "kd_econ_housing",
+        "kd_econ_unemploy",
+        "kd_health_asthma", "kd_health_breastfed", "kd_health_cancer",
+        "kd_health_deaths", "kd_health_dental", "kd_health_healthcare",
+        "kd_health_status", "kd_health_hospital", "kd_health_immune",
+        "kd_health_infmort", "kd_health_injury", "kd_health_lbwpt",
+        "kd_health_nutrition", "kd_health_fitness", "kd_health_prenatal",
+        "kd_health_teenbirth", "kd_health_teenshealth", "kd_health_weight",
+        "kd_covid_family",
+        "kd_env_air", "kd_env_lead", "kd_env_water",
+        "kd_shcn_chars", "kd_shcn_access", "kd_shcn_impacts", "kd_shcn_quality",
+    ):
+        _merge_county_year(f"processed/canonical/{prefix}_overall.parquet", prefix)
 
     # ---- Track 1.5 single-year + year-only ---- #
     acs = _safe_download("processed/canonical/census_acs5.parquet")
