@@ -90,9 +90,14 @@ def build_spine(parquet_path: Path) -> pd.DataFrame:
     parts.append(grad[["cds", "year_num", "graduation_rate_pct", "_e"]]
                   .rename(columns={"_e": "enrollment"}))
 
-    parts.append(_simple(df, _CT_FRPM, "pct_frl"))
-    parts.append(_simple(df, _CT_ELL, "pct_ell"))
-    parts.append(_simple(df, _CT_TEACHER, "pct_experienced_teachers", ["Experienced"]))
+    # CRITICAL FIX: chart_types 25/26 produce RAW COUNTS from DataQuest, not
+    # percentages. Earlier versions of this builder mislabeled these as
+    # `pct_*` causing two Phase B agents to independently discover and
+    # correct the bug. Now we ship BOTH the count (honestly named) and the
+    # actual share (count/enrollment × 100) computed post-merge.
+    parts.append(_simple(df, _CT_FRPM, "frpl_count"))
+    parts.append(_simple(df, _CT_ELL, "ell_count"))
+    parts.append(_simple(df, _CT_TEACHER, "experienced_teachers_count", ["Experienced"]))
     parts.append(_simple(df, _CT_FOSTER, "foster_count"))
 
     eth_map = {"African American": "pct_black", "Black or African American": "pct_black",
@@ -108,6 +113,14 @@ def build_spine(parquet_path: Path) -> pd.DataFrame:
         wide = wide.merge(p, on=["cds", "year_num"], how="outer")
     wide = wide.sort_values(["cds", "year_num"]).reset_index(drop=True)
     wide["county_code"] = wide["cds"].astype(str).str.slice(0, 2).str.zfill(2)
+
+    # Compute TRUE shares from counts. Clip enrollment > 0 to avoid div-by-0.
+    # Values should land in [0, 100]; >100 implies a data quality issue.
+    safe_enroll = wide["enrollment"].where(wide["enrollment"] > 0, np.nan)
+    wide["pct_frl"] = (100.0 * wide["frpl_count"] / safe_enroll).round(2)
+    wide["pct_ell"] = (100.0 * wide["ell_count"] / safe_enroll).round(2)
+    wide["pct_experienced_teachers"] = (100.0 * wide["experienced_teachers_count"]
+                                                  / safe_enroll).round(2)
     log.info("spine built: %d rows × %d cols, %d districts, years %d..%d",
               len(wide), wide.shape[1], wide["cds"].nunique(),
               wide["year_num"].min(), wide["year_num"].max())
